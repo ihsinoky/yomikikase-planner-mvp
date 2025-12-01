@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>日程確定モック</title>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <style>
+    :root {
+      --border: #d9d9e3;
+      --primary: #2563eb;
+      --primary-strong: #1d4ed8;
+      --muted: #6b7280;
+      --bg: #f7f8fb;
+      --panel: #ffffff;
+    }
+
+    body {
+      font-family: "Inter", "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: #111827;
+      margin: 0;
+      padding: 16px;
+      min-height: 100vh;
+    }
+
+    h1 {
+      margin-bottom: 8px;
+      font-size: 22px;
+    }
+
+    p.description {
+      margin-top: 0;
+      margin-bottom: 16px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 480px;
+      margin: 0 auto 24px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--panel);
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.07);
+      padding: 18px 16px 20px;
+    }
+
+    .filter {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .filter label {
+      font-weight: 600;
+      color: #374151;
+      font-size: 14px;
+    }
+
+    select,
+    button {
+      font-size: 15px;
+    }
+
+    select {
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+      min-width: 100%;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+    }
+
+    .dates {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .date-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      background: #f9fafb;
+      display: grid;
+      grid-template-columns: 1fr;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.04);
+    }
+
+    .date-label {
+      font-weight: 700;
+      font-size: 15px;
+      line-height: 1.4;
+    }
+
+    .date-card.active {
+      border-color: var(--primary);
+      background: #eff4ff;
+      box-shadow: 0 10px 22px rgba(37, 99, 235, 0.15);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 12px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      width: 100%;
+      touch-action: manipulation;
+    }
+
+    .btn-primary:hover,
+    .btn-primary:focus-visible {
+      background: var(--primary-strong);
+    }
+
+    .btn-primary:active {
+      background: #163ea8;
+    }
+
+    .panel {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      background: #f8fafc;
+    }
+
+    .panel h3 {
+      margin-top: 0;
+      margin-bottom: 12px;
+      font-size: 17px;
+    }
+
+    .member-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .member-item {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      background: #fff;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .member-item input[type="checkbox"] {
+      accent-color: var(--primary);
+      width: 18px;
+      height: 18px;
+    }
+
+    .status {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    @media (min-width: 640px) {
+      body {
+        padding: 24px;
+      }
+
+      .app {
+        padding: 20px 20px 22px;
+      }
+
+      .filter {
+        flex-direction: row;
+        align-items: center;
+      }
+
+      select {
+        min-width: 220px;
+      }
+
+      .dates {
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      }
+
+      .date-card {
+        grid-template-columns: 1fr auto;
+        gap: 12px;
+      }
+
+      .member-list {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app" x-data="scheduleApp()">
+    <h1>日程確定モック</h1>
+    <p class="description">学年でフィルタし、日付を選んで参加者を確定する流れを確認するためのスタンドアロンモックです。</p>
+
+    <!-- 学年フィルタ -->
+    <div class="filter">
+      <label for="grade-select">学年フィルタ</label>
+      <select id="grade-select" x-model="selectedGrade">
+        <option value="">全学年</option>
+        <template x-for="g in grades" :key="g">
+          <option :value="g" x-text="g"></option>
+        </template>
+      </select>
+    </div>
+
+    <!-- 候補日一覧 -->
+    <div class="dates">
+      <template x-for="d in dates" :key="d.value">
+        <div class="date-card" :class="{ active: selectedDate?.value === d.value }">
+          <div class="date-label" x-text="d.label"></div>
+          <button class="btn-primary" type="button" @click="selectDate(d)">決定</button>
+        </div>
+      </template>
+    </div>
+
+    <!-- 選択後の参加者選択UI -->
+    <div x-show="selectedDate" x-transition class="panel">
+      <h3>選択日程：<span x-text="selectedDate?.label"></span></h3>
+
+      <div class="member-list">
+        <template x-for="m in filteredMembers()" :key="m.id">
+          <label class="member-item">
+            <input type="checkbox" :value="m.id" x-model="selectedMembers" />
+            <div>
+              <div x-text="m.name"></div>
+              <div class="status" x-text="m.grade"></div>
+            </div>
+          </label>
+        </template>
+      </div>
+
+      <button class="btn-primary" type="button" @click="confirm()">確定登録</button>
+      <div class="status" x-text="confirmationLog" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <script>
+    function scheduleApp() {
+      return {
+        grades: ['年少', '年中', '年長'],
+        selectedGrade: '',
+        dates: [
+          { value: '2025-05-10', label: '2025-05-10 (土) 午前' },
+          { value: '2025-06-12', label: '2025-06-12 (木) 午後' },
+          { value: '2025-07-14', label: '2025-07-14 (月) 午前' }
+        ],
+        members: [
+          { id: 1, name: '山田 花 (こぐま班)', grade: '年長' },
+          { id: 2, name: '鈴木 海 (こあら班)', grade: '年長' },
+          { id: 3, name: '佐藤 空 (うさぎ班)', grade: '年中' },
+          { id: 4, name: '田中 光 (ひよこ班)', grade: '年少' },
+          { id: 5, name: '伊藤 星 (うさぎ班)', grade: '年中' }
+        ],
+
+        selectedDate: null,
+        selectedMembers: [],
+        confirmationLog: '',
+
+        filteredMembers() {
+          if (!this.selectedGrade) return this.members;
+          return this.members.filter((m) => m.grade === this.selectedGrade);
+        },
+
+        selectDate(date) {
+          this.selectedDate = date;
+          this.selectedMembers = [];
+          this.confirmationLog = '';
+        },
+
+        confirm() {
+          const payload = {
+            date: this.selectedDate?.value,
+            members: [...this.selectedMembers]
+          };
+
+          console.log('Mock submit payload', payload);
+          this.confirmationLog = `送信内容: ${payload.date} / 参加者ID ${payload.members.join(', ') || 'なし'}`;
+        }
+      };
+    }
+  </script>
+</body>
+</html>
