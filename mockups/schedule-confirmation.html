@@ -220,7 +220,7 @@
 
     <!-- 候補日一覧 -->
     <div class="dates">
-      <template x-for="d in filteredDates()" :key="d.value">
+      <template x-for="d in dates" :key="d.value">
         <div class="date-card" :class="{ active: selectedDate?.value === d.value }">
           <div class="date-label" x-text="d.label"></div>
           <button class="btn-primary" type="button" @click="selectDate(d)">決定</button>
@@ -270,10 +270,6 @@
         selectedDate: null,
         selectedMembers: [],
         confirmationLog: '',
-
-        filteredDates() {
-          return this.dates;
-        },
 
         filteredMembers() {
           if (!this.selectedGrade) return this.members;
